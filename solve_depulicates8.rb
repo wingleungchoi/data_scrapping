@@ -38,26 +38,33 @@ def collection_raw_data(stock_number="0001")# it only accpet a string of 4 digit
   return @stocks_data_collection
 end
 
-no_chinese_data = []
-collection_raw_data("0001").each do |element|
-  no_chinese_data << element.text.strip.tr('年','-').tr('月','-').tr('日','')
-end
 
-no_chinese_data.delete_if {|data| /股利/.match(data) } # remove depulicate data eg 2014-09-01  股利
+def purify_data(collection_raw_data) # only accepts stocks_data_collection which is a return of collecion_raw_dat and makes it pure i.e. remove depulicates and make all elements string
+  no_chinese_data = []
+  collection_raw_data.each do |element|
+    no_chinese_data << element.text.strip.tr('年','-').tr('月','-').tr('日','')
+  end
 
-
-number_to_delete = [] # remove depulicate data of giving dividend
-no_chinese_data.each_index do |index|
-#  binding.pry
-  if index < no_chinese_data.length - 7
-    if no_chinese_data[index][0..2]=="201" && no_chinese_data[index+7][0..2]=="201" && no_chinese_data[index][-3..-1] == no_chinese_data[index+7][-3..-1]
-      number_to_delete << index
+  td_to_delete = [] # remove depulicate data of giving dividend
+  no_chinese_data.each_index do |index|
+      if /股利/.match(no_chinese_data[index])
+        td_to_delete << no_chinese_data[index - 1]
+        td_to_delete << no_chinese_data[index]
+      end
+  end
+ # remove depulicate data of giving dividend
+  td_to_delete.each_index do |index|
+    if index%2 == 0 && no_chinese_data.uniq.include?(td_to_delete[index])
+        no_chinese_data.delete_at(no_chinese_data.index(td_to_delete[index]))
+      elsif index%2 == 0 
+         binding.pry
+        no_chinese_data.delete_at(no_chinese_data.index(td_to_delete[index]) - 7)
+      else
+        no_chinese_data.delete(td_to_delete[index])
     end
   end
+  binding.pry
+  return no_chinese_data  
 end
-
-number_to_delete.each do |element|
-  no_chinese_data.delete_at(element)
-end
-
+puts purify_data(collection_raw_data("0001")).length
 

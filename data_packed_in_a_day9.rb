@@ -82,5 +82,21 @@ end
   end
 =end 
 
+def data_packed_in_day(purify_data) # only accepts purify_data and returns an array of hashs. each hash is {date: "2012-04-11",open: "28.800", high: "28.800", low: "28.150", close: "28.650", trading_volume: "3,113,4000", adjusted_close: "26.540"}
+  days_of_record = purify_data.length/7
+  number_started_by_zero = days_of_record - 1
+  data_in_days = []
+  (0..number_started_by_zero).each do |number|
+    data_in_days[number] = {}
+    data_in_days[number][:date] = purify_data[number*7]
+    data_in_days[number][:open] = purify_data[number*7 + 1]
+    data_in_days[number][:high] = purify_data[number*7 + 2]
+    data_in_days[number][:low] = purify_data[number*7 +3]
+    data_in_days[number][:close] = purify_data[number*7 +4]
+    data_in_days[number][:trading_volume] = purify_data[number*7 + 5]
+    data_in_days[number][:adjusted_close] = purify_data[number*7 + 6]
+  end
+  return data_in_days # returns an array of hashs
+end
 
-
+puts data_packed_in_day(purify_data(collection_raw_data("2388")))

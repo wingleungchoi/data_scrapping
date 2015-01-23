@@ -41,7 +41,7 @@ end
 def purify_data(stock_number) # only accepts a string of 4 digits as an argument. and return it pure data i.e. remove depulicates and make all elements string
   stocks_data_collection = collection_raw_data(stock_number)
   no_chinese_data = [] # remove chinese words of year, month, day and convert to '-'
-  no_chinese_data = collection_raw_data.map{|element| element.text.strip.gsub(/[年月]/, "-").gsub(/[日]/,'')}
+  no_chinese_data = stocks_data_collection.map{|element| element.text.strip.gsub(/[年月]/, "-").gsub(/[日]/,'')}
 
   td_to_delete = [] #  a container for depulicate data due to giving dividend and special stock dividend 
   no_chinese_data.each_index do |index|
@@ -50,15 +50,25 @@ def purify_data(stock_number) # only accepts a string of 4 digits as an argument
         td_to_delete << no_chinese_data[index]
       end
   end
- # remove depulicate data 
+ # remove depulicate data
+ # td_to_delete is array of depulicated strings [date, 股利, date,股票分拆, date,股利, date,股利 ....]
+ # element even index, e.g. 0,2,4, in td_to_delete is the depulicate date
+ # element odd incdex, in  td_to_delete is the depulicate chinese 股利|股票分拆
+ # chinese 股利|股票分拆 is unique, therefore, it is confident to remove them by just using method delete
+ # however depulicate dates cannot simply use delete() method
+ # because depulicate dates somethings might be present twice in data if the company gives dividend on a trading day
+ # line 70 to find whether it is present twice. 
+ # if present twice, we cannot use delete method
   td_to_delete.each_index do |index|
-    if index%2 == 0 && no_chinese_data.uniq.include?(td_to_delete[index])
-        no_chinese_data.delete_at(no_chinese_data.index(td_to_delete[index]))
+    if index%2 == 0 && no_chinese_data.uniq.include?(td_to_delete[index]) 
+        no_chinese_data.delete(td_to_delete[index]) # simlply used delete because the depulcate date only is present once
       elsif index%2 == 0 
          binding.pry
-        no_chinese_data.delete_at(no_chinese_data.index(td_to_delete[index]) - 7)
+        no_chinese_data.delete_at(no_chinese_data.index(td_to_delete[index]) - 7) 
+        # find to the real index of the depulicate date which is 1 table row / 7 table data before fake index because the depulcate date only is twice
       else
         no_chinese_data.delete(td_to_delete[index])
+        # chinese 股利|股票分拆 is unique, therefore, it is confident to remove them by just using method delete
     end
   end
   return no_chinese_data  # an array of string elements  which is [2012-04-11, 28.800, 28.800, 28.150, 28.650, 3,113,400, 26.540, another day........]

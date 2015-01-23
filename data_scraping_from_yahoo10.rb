@@ -2,6 +2,14 @@ require 'rubygems'
 require 'mechanize'
 require 'pry'
 
+  def download_data_from_yahoo(page, target_css=".yfnc_tabledata1" )
+    parseable_page = page.parser
+    stocks_data = parseable_page.css(target_css).to_a
+     #remove last element which is a chinese word
+    stocks_data.pop
+    return stocks_data  
+  end
+
 def collection_raw_data(stock_number="0001")# it only accpet a string of 4 digits as an argument. In the end, it returns stocks_data_collection = [] # an array of Nokogiri::XML::Element
   url = "https://hk.finance.yahoo.com/q/hp?s=#{stock_number}.HK "
   agent = Mechanize.new
@@ -18,40 +26,26 @@ def collection_raw_data(stock_number="0001")# it only accpet a string of 4 digit
 
   # now confirm we search from 2001-01-01 to present #assume: yahoo default is present
   #start scrapping data and store an array of Nokogiri::XML::Element
-  @stocks_data_collection = [] # an array of Nokogiri::XML::Element
+  stocks_data_collection = [] # an array of Nokogiri::XML::Element
 
-  def download_data_from_yahoo(page, target_css=".yfnc_tabledata1" )
-    parseable_page = page.parser
-    stocks_data = parseable_page.css(target_css).to_a
-     #remove last element which is a chinese word
-    stocks_data.pop
-    @stocks_data_collection += stocks_data  
-  end
-
-
-  download_data_from_yahoo(page)
+  stocks_data_collection += download_data_from_yahoo(page)
 
   10.times do   # only 10 times to prevent database overload
     page = agent.page.link_with(:text => '下一頁').click 
-    download_data_from_yahoo(page)
+    stocks_data_collection += download_data_from_yahoo(page)
   end
-  return @stocks_data_collection #  an array of Nokogiri::XML::Element
+  return stocks_data_collection #  an array of Nokogiri::XML::Element
 end
 
 
-def purify_data(collection_raw_data) # only accepts stocks_data_collection which is a return of collecion_raw_dat and makes it pure i.e. remove depulicates and make all elements string
+def purify_data(stock_number) # only accepts a string of 4 digits as an argument. and return it pure data i.e. remove depulicates and make all elements string
+  stocks_data_collection = collection_raw_data(stock_number)
   no_chinese_data = [] # remove chinese words of year, month, day and convert to '-'
-  collection_raw_data.each do |element|
-    no_chinese_data << element.text.strip.tr('年','-').tr('月','-').tr('日','')
-  end
+  no_chinese_data = collection_raw_data.map{|element| element.text.strip.gsub(/[年月]/, "-").gsub(/[日]/,'')}
 
   td_to_delete = [] #  a container for depulicate data due to giving dividend and special stock dividend 
   no_chinese_data.each_index do |index|
-      if /股利/.match(no_chinese_data[index])
-        td_to_delete << no_chinese_data[index - 1]
-        td_to_delete << no_chinese_data[index]
-      end
-      if /股票分拆/.match(no_chinese_data[index])
+      if /股利|股票分拆/.match(no_chinese_data[index])
         td_to_delete << no_chinese_data[index - 1]
         td_to_delete << no_chinese_data[index]
       end
@@ -75,7 +69,7 @@ end
   (100..500).each do |number|
     begin
     stock_number =  "0" + number.to_s
-    puts purify_data(collection_raw_data(stock_number)).length.to_s + " " + number.to_s
+    puts purify_data(stock_number).length.to_s + " " + number.to_s
     rescue 
       NUMBER_OF_MISSING_STOCK << number
     end
@@ -99,4 +93,5 @@ def data_packed_in_day(purify_data) # only accepts purify_data and returns an ar
   return data_in_days # returns an array of hashs
 end
 
-puts data_packed_in_day(purify_data(collection_raw_data("2388")))
+puts data_packed_in_day(purify_data("2388"))
+puts data_packed_in_day(purify_data("2388")).length

@@ -4,8 +4,12 @@ require 'pry'
 
 def remove_dividend_entries(trs) # input an array of trs (Nokogiri::XML::Element) and remove divident entries and return a new array of trs
   trs.each do |tr|
-    # trs.delete(tr) if /股利|股票/.match(tr.text) Both work
-    trs.delete(tr) if tr.children.length != 7
+    trs.delete(tr) if /股利|股票/.match(tr.text.strip) #Both work
+    #trs.delete(tr) if tr.children.length != 7
+  end
+  trs.each do |tr| # I repeat intentionly because of long reason, call me to explain,please refer to https://hk.finance.yahoo.com/q/hp?s=0133.HK&a=0&b=12&c=2000&d=0&e=25&f=2015&g=d&z=66&y=396
+    trs.delete(tr) if /股利|股票/.match(tr.text.strip) #Both work
+    #trs.delete(tr) if tr.children.length != 7
   end
   return trs
 end
@@ -88,25 +92,25 @@ def download_from_yahoo(stock_number) #input a string of 4 ditil and return an a
   return make_tr_to_data(trs) # input an array of tr and returnreturn an array of hashs where each hash is a daily price.
 end
 
-puts download_from_yahoo("0005")
+puts download_from_yahoo("0133").length
 
-NUMBER_OF_MISSING_STOCK = [49, 80, 133, 134, 140, 148, 150, 152, 153, 192, 203, 249, 258, 284, 288, 301, 302, 304, 314, 324, 325, 331, 338, 344, 349, 386, 394, 400, 401, 407, 409, 414, 415, 416, 424, 427, 429, 434, 436, 434, 436, 437, 441, 442, 443, 446, 447, 448, 452, 453, 454, 457, 460, 461, 462, 463, 466, 470, 473, 478, 481, 484, 490, 492]
-=begin  # the way to find missing stock number or stocks cannot provide sufficient data
+NUMBER_OF_MISSING_STOCK = [49, 80, 134, 140, 150,153, 192, 203, 249, 284, 288, 301, 304, 314, 324, 325, 331, 344, 349, 394, 400, 401, 407, 409, 414, 415, 416, 424, 427, 429, 434, 436, 437, 441, 442, 443, 446, 447, 448, 452, 453, 454, 457, 461, 462, 463, 466, 470, 473, 478, 481, 484, 490, 492]]
+#=begin  # the way to find missing stock number or stocks cannot provide sufficient data
   (100..500).each do |number|
     begin
     stock_number =  "0" + number.to_s
-    puts purify_data(stock_number).length.to_s + " " + number.to_s
+    puts  download_from_yahoo(stock_number).length.to_s + " " + number.to_s
     rescue 
       NUMBER_OF_MISSING_STOCK << number
     end
   end
-=end 
+#=end 
 
 =begin text of the method download_from_yahoo
   puts download_from_yahoo("0001").length #targe: 726
   puts download_from_yahoo("0005") # target: [{date: 2015-01-05, high: 140,...},{date: 2015-01-04,high:..},...]
 =end
-#PROBLEM_TR= [438, 42]
+
 ##  url = "https://hk.finance.yahoo.com/q/hp?s=0133.HK&a=0&b=12&c=2000&d=0&e=25&f=2015&g=d&z=66&y=396"
 ##  agent = Mechanize.new
 ##  page = agent.get(url)

@@ -69,7 +69,6 @@ def purify_data(collection_raw_data) # only accepts stocks_data_collection which
     if index%2 == 0 && no_chinese_data.uniq.include?(td_to_delete[index]) 
         no_chinese_data.delete(td_to_delete[index]) # simlply used delete because the depulcate date only is present once
       elsif index%2 == 0 
-         binding.pry
         no_chinese_data.delete_at(no_chinese_data.index(td_to_delete[index]) - 7) 
         # find to the real index of the depulicate date which is 1 table row / 7 table data before fake index because the depulcate date only is twice
       else
